@@ -1,4 +1,6 @@
-﻿param([string]$編譯器 = '', [switch]$略過桌面)
+﻿param([string]$編譯器 = '', [switch]$略過桌面,
+    [switch]$Android, [switch]$APK
+)
 $ErrorActionPreference = 'Stop'
 if (-not $編譯器) {
     $本機編譯器 = Join-Path (Split-Path $PSScriptRoot) 'AquariusLangTW/AquariusCli/bin/Debug/net8.0/aqua.dll'
@@ -32,4 +34,10 @@ try {
     [IO.File]::WriteAllText($首頁, $內容, [Text.UTF8Encoding]::new($false))
     if (-not $略過桌面) { 執行編譯器 @('build','dist/星泉聲音工坊.wasm','--target','windows','-o','dist/星泉聲音工坊.exe') | Out-Null }
     Write-Host '完成：星泉聲音工坊、音訊驗證與網頁版本。'
+
+    if ($Android -or $APK) {
+        $AndroidOutput = if ($APK) { 'dist/android.apk' } else { ('dist/android-project-' + [Guid]::NewGuid().ToString('N').Substring(0,8)) }
+        執行編譯器 @('build','dist/星泉聲音工坊.wasm','--target','android','-o',$AndroidOutput) | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Android 建置失敗。' }
+    }
 } finally { [Console]::OutputEncoding = $原編碼; Pop-Location }
